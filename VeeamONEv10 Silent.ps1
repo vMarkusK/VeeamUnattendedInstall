@@ -162,14 +162,15 @@ $MSIArguments = @(
     "$logdir\07_MonitorServer.txt"
     "ACCEPT_THIRDPARTY_LICENSES=1"
     "ACCEPT_EULA=1"
-    "VM_MN_SERVICEACCOUNT=$fulluser"
+    "VM_MN_SERVICEACCOUNT=$username"
     "VM_MN_SERVICEPASSWORD=$password"
-    "VM_MN_SQL_SERVER=localhost\\VEEAMSQL2016"
+    "VM_MN_SQL_SERVER=$env:COMPUTERNAME\VEEAMSQL2016"
     "VM_MN_SQL_AUTHENTICATION=1"
     "VM_MN_SQL_USER=sa"
     "VM_MN_SQL_PASSWORD=$SQLsapassword"
     "VM_BACKUP_ADD_LATER=1"
     "VM_VC_SELECTED_TYPE=2"
+
 )
 Start-Process "msiexec.exe" -ArgumentList $MSIArguments -Wait -NoNewWindow
 
@@ -180,4 +181,3 @@ if (Select-String -path "$logdir\07_MonitorServer.txt" -pattern "Installation su
         throw "Setup Failed"
         }
 
-############## In Progess!
