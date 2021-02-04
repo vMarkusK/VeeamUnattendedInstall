@@ -147,6 +147,7 @@ Start-Process "msiexec.exe" -ArgumentList $MSIArguments -Wait -NoNewWindow
 CheckLatestLog
 
 ### IIS
+Write-Host "    Installing IIS Windows Feature ..." -ForegroundColor Yellow
 $logfile = "06_IIS.txt"
 Install-WindowsFeature -Name Web-Server -IncludeAllSubFeature –IncludeManagementTools -Confirm:$false -LogPath "$logdir\$logfile"
 
