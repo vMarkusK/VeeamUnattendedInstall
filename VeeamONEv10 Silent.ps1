@@ -13,6 +13,7 @@
 
 #>
 
+
 #region: functions
 function CheckLatestLog {
 
@@ -189,7 +190,7 @@ Write-Host "    Installing Veeam ONE Reporter Server ..." -ForegroundColor Yello
 $logfile = "08_ReporterServer.txt"
 $MSIArguments = @(
     "/i"
-    "$source\Monitor\VeeamONE.Reporter.Server.x64.msi"
+    "$source\Reporter\VeeamONE.Reporter.Server.x64.msi"
     "/qn"
     "/L*v"
     "$logdir\$logfile"
@@ -197,7 +198,7 @@ $MSIArguments = @(
     "ACCEPT_EULA=1"
     "VM_RP_SERVICEACCOUNT=$username"
     "VM_RP_SERVICEPASSWORD=$password"
-    "VM_RP_SQL_SERVER=l$env:COMPUTERNAME\$SQLinstance"
+    "VM_RP_SQL_SERVER=$env:COMPUTERNAME\$SQLinstance"
     "VM_RP_SQL_AUTHENTICATION=1"
     "VM_RP_SQL_USER=sa"
     "VM_RP_SQL_PASSWORD=$SQLsapassword"
@@ -214,7 +215,7 @@ Write-Host "    Installing Veeam ONE Reporter Web UI ..." -ForegroundColor Yello
 $logfile = "08_ReporterWebUI.txt"
 $MSIArguments = @(
     "/i"
-    "$source\Monitor\VeeamONE.Reporter.WebUI.x64.msi"
+    "$source\Reporter\VeeamONE.Reporter.WebUI.x64.msi"
     "/qn"
     "/L*v"
     "$logdir\$logfile"
@@ -222,7 +223,7 @@ $MSIArguments = @(
     "ACCEPT_EULA=1"
     "VM_RP_SERVICEACCOUNT=$username"
     "VM_RP_SERVICEPASSWORD=$password"
-    "VM_RP_SQL_SERVER=l$env:COMPUTERNAME\$SQLinstance"
+    "VM_RP_SQL_SERVER=$env:COMPUTERNAME\$SQLinstance"
     "VM_RP_SQL_AUTHENTICATION=1"
     "VM_RP_SQL_USER=sa"
     "VM_RP_SQL_PASSWORD=$SQLsapassword"
@@ -254,7 +255,7 @@ Write-Host "    Installing Veeam ONE Agent ..." -ForegroundColor Yellow
 $logfile = "10_Agent.txt"
 $MSIArguments = @(
     "/i"
-    "$source\Monitor\VeeamONE.Agent.x64.msi"
+    "$source\Agent\VeeamONE.Agent.x64.msi"
     "/qn"
     "/L*v"
     "$logdir\$logfile"
@@ -269,4 +270,3 @@ $MSIArguments = @(
 Start-Process "msiexec.exe" -ArgumentList $MSIArguments -Wait -NoNewWindow
 
 CheckLatestLog
-
