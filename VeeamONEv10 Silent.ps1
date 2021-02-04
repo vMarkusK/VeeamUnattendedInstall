@@ -1,4 +1,30 @@
-# Requires PowerShell 5.1
+<#
+    .DESCRIPTION
+    Installing Veeam ONE (VeeamONE_10.0.0.750_20200415) in Unattended Mode
+
+    .NOTES
+    File Name  : VeeamONEv10 Silent.ps1
+    Author     : Markus Kraus (@vMarkusK)
+    Version    : 0.3
+    State      : Dev
+
+    .LINK
+    https://mycloudrevolution.com/
+
+#>
+
+#region: functions
+function CheckLatestLog {
+
+    if (Select-String -path "$logdir\$logfile" -pattern "Installation success or error status: 0.") {
+        Write-Host "    Setup OK" -ForegroundColor Green
+        }
+        else {
+            throw "Setup Failed"
+            }
+    
+}
+#endregion
 
 #region: Variables
 $source = "E:"
@@ -6,13 +32,12 @@ $licensefile = "C:\_install\veeam.lic"
 $username = "svc_veeam"
 $fulluser = $env:COMPUTERNAME+ "\" + $username
 $password = "Password!"
+$SQLinstance = "VEEAMSQL2016"
 $SQLusername = "svc_sql"
 $SQLfulluser = $env:COMPUTERNAME+ "\" + $username
 $SQLpassword = "Password!"
 $SQLsapassword = "Password!"
-#$CatalogPath = "D:\VbrCatalog"
-#$vPowerPath = "D:\vPowerNfs"
-#endregion
+##endregion
 
 #region: logdir
 $logdir = "C:\logdir"
@@ -47,124 +72,106 @@ Add-LocalGroupMember -Group "Users" -Member $SQLusername -ErrorAction Stop
 Write-Host "Installing Global Prerequirements ..." -ForegroundColor Yellow
 ### 2012 System CLR Types
 Write-Host "    Installing 2012 System CLR Types ..." -ForegroundColor Yellow
+$logfile = "01_CLR.txt"
 $MSIArguments = @(
     "/i"
     "$source\Redistr\x64\SQLSysClrTypes.msi"
     "/qn"
     "/norestart"
     "/L*v"
-    "$logdir\01_CLR.txt"
+    "$logdir\$logfile"
 )
 Start-Process "msiexec.exe" -ArgumentList $MSIArguments -Wait -NoNewWindow
 
-if (Select-String -path "$logdir\01_CLR.txt" -pattern "Installation success or error status: 0.") {
-    Write-Host "    Setup OK" -ForegroundColor Green
-    }
-    else {
-        throw "Setup Failed"
-        }
+CheckLatestLog
 
 ### 2012 Shared management objects
 Write-Host "    Installing 2012 Shared management objects ..." -ForegroundColor Yellow
+$logfile = "02_Shared.txt"
 $MSIArguments = @(
     "/i"
     "$source\Redistr\x64\SharedManagementObjects.msi"
     "/qn"
     "/norestart"
     "/L*v"
-    "$logdir\02_Shared.txt"
+    "$logdir\$logfile"
 )
 Start-Process "msiexec.exe" -ArgumentList $MSIArguments -Wait -NoNewWindow
 
-if (Select-String -path "$logdir\02_Shared.txt" -pattern "Installation success or error status: 0.") {
-    Write-Host "    Setup OK" -ForegroundColor Green
-    }
-    else {
-        throw "Setup Failed"
-        }
+CheckLatestLog
 
 ### XML Parser
 Write-Host "    Installing XML Parser..." -ForegroundColor Yellow
+$logfile = "03_xml.txt"
 $MSIArguments = @(
     "/i"
     "$source\Redistr\x64\msxml6_x64.msi"
     "/qn"
     "/norestart"
     "/L*v"
-    "$logdir\03_xml.txt"
+    "$logdir\$logfile"
 )
 Start-Process "msiexec.exe" -ArgumentList $MSIArguments -Wait -NoNewWindow
 
-if (Select-String -path "$logdir\03_xml.txt" -pattern "Installation success or error status: 0.") {
-    Write-Host "    Setup OK" -ForegroundColor Green
-    }
-    else {
-        throw "Setup Failed"
-        }
+CheckLatestLog
 
 ### SQL Native Client
 Write-Host "    Installing SQL Native Client..." -ForegroundColor Yellow
+$logfile = "04_sqlncli.txt"
 $MSIArguments = @(
     "/i"
     "$source\Redistr\x64\sqlncli.msi"
     "/qn"
     "/norestart"
     "/L*v"
-    "$logdir\04_sqlncli.txt"
+    "$logdir\$logfile"
     "IACCEPTSQLNCLILICENSETERMS=YES"
 )
 Start-Process "msiexec.exe" -ArgumentList $MSIArguments -Wait -NoNewWindow
 
-if (Select-String -path "$logdir\04_sqlncli.txt" -pattern "Installation success or error status: 0.") {
-    Write-Host "    Setup OK" -ForegroundColor Green
-    }
-    else {
-        throw "Setup Failed"
-        }
+CheckLatestLog
 
 ### ReportViewer
 Write-Host "    Installing ReportViewer..." -ForegroundColor Yellow
+$logfile = "05_ReportViewer.txt"
 $MSIArguments = @(
     "/i"
     "$source\Redistr\ReportViewer.msi"
     "/qn"
     "/norestart"
     "/L*v"
-    "$logdir\05_ReportViewer.txt"
+    "$logdir\$logfile"
 )
 Start-Process "msiexec.exe" -ArgumentList $MSIArguments -Wait -NoNewWindow
 
-if (Select-String -path "$logdir\05_ReportViewer.txt" -pattern "Installation success or error status: 0.") {
-    Write-Host "    Setup OK" -ForegroundColor Green
-    }
-    else {
-        throw "Setup Failed"
-        }
+CheckLatestLog
 
 ### IIS
-Install-WindowsFeature -Name Web-Server -IncludeAllSubFeature –IncludeManagementTools -Connfirm:$false -LogPath "$logdir\06_IIS.txt"
+$logfile = "06_IIS.txt"
+Install-WindowsFeature -Name Web-Server -IncludeAllSubFeature –IncludeManagementTools -Confirm:$false -LogPath "$logdir\$logfile"
 
 ### SQL Express
 ### Info: https://msdn.microsoft.com/en-us/library/ms144259.aspx
 Write-Host "    Installing SQL 2016 Express ..." -ForegroundColor Yellow
-$Arguments = "/HIDECONSOLE /Q /IACCEPTSQLSERVERLICENSETERMS /ACTION=install /FEATURES=SQL /INSTANCENAME=VEEAMSQL2016 /SQLSVCACCOUNT=`"$SQLfulluser`" /SQLSVCPASSWORD=`"$SQLpassword`" /SECURITYMODE=SQL /SAPWD=`"$SQLsapassword`" /ADDCURRENTUSERASSQLADMIN /TCPENABLED=1 /NPENABLED=1 /UpdateEnabled=0"
+$Arguments = "/HIDECONSOLE /Q /IACCEPTSQLSERVERLICENSETERMS /ACTION=install /FEATURES=SQL /INSTANCENAME=`"$SQLinstance`" /SQLSVCACCOUNT=`"$SQLfulluser`" /SQLSVCPASSWORD=`"$SQLpassword`" /SECURITYMODE=SQL /SAPWD=`"$SQLsapassword`" /ADDCURRENTUSERASSQLADMIN /TCPENABLED=1 /NPENABLED=1 /UpdateEnabled=0"
 Start-Process "$source\\Redistr\x64\SqlExpress\2016SP2\SQLEXPR_x64_ENU.exe" -ArgumentList $Arguments -Wait -NoNewWindow
 
 ## Install Veeam ONE without license file
 Write-Host "Installing Veeam ONE without license file ..." -ForegroundColor Yellow
 ### Veeam ONE Monitor Server
+$logfile = "07_MonitorServer.txt"
 Write-Host "    Installing Veeam ONE Monitor Server ..." -ForegroundColor Yellow
 $MSIArguments = @(
     "/i"
-    "$source\Monitor\\VeeamONE.Monitor.Server.x64.msi"
+    "$source\Monitor\VeeamONE.Monitor.Server.x64.msi"
     "/qn"
     "/L*v"
-    "$logdir\07_MonitorServer.txt"
+    "$logdir\$logfile"
     "ACCEPT_THIRDPARTY_LICENSES=1"
     "ACCEPT_EULA=1"
     "VM_MN_SERVICEACCOUNT=$username"
     "VM_MN_SERVICEPASSWORD=$password"
-    "VM_MN_SQL_SERVER=$env:COMPUTERNAME\VEEAMSQL2016"
+    "VM_MN_SQL_SERVER=$env:COMPUTERNAME\$SQLinstance"
     "VM_MN_SQL_AUTHENTICATION=1"
     "VM_MN_SQL_USER=sa"
     "VM_MN_SQL_PASSWORD=$SQLsapassword"
@@ -174,10 +181,91 @@ $MSIArguments = @(
 )
 Start-Process "msiexec.exe" -ArgumentList $MSIArguments -Wait -NoNewWindow
 
-if (Select-String -path "$logdir\07_MonitorServer.txt" -pattern "Installation success or error status: 0.") {
-    Write-Host "    Setup OK" -ForegroundColor Green
-    }
-    else {
-        throw "Setup Failed"
-        }
+CheckLatestLog
+
+### Veeam ONE Reporter Server
+Write-Host "    Installing Veeam ONE Reporter Server ..." -ForegroundColor Yellow
+$logfile = "08_ReporterServer.txt"
+$MSIArguments = @(
+    "/i"
+    "$source\Monitor\VeeamONE.Reporter.Server.x64.msi"
+    "/qn"
+    "/L*v"
+    "$logdir\$logfile"
+    "ACCEPT_THIRDPARTY_LICENSES=1"
+    "ACCEPT_EULA=1"
+    "VM_RP_SERVICEACCOUNT=$username"
+    "VM_RP_SERVICEPASSWORD=$password"
+    "VM_RP_SQL_SERVER=l$env:COMPUTERNAME\$SQLinstance"
+    "VM_RP_SQL_AUTHENTICATION=1"
+    "VM_RP_SQL_USER=sa"
+    "VM_RP_SQL_PASSWORD=$SQLsapassword"
+    "VM_BACKUP_ADD_LATER=1"
+    "VM_VC_SELECTED_TYPE=2"
+
+)
+Start-Process "msiexec.exe" -ArgumentList $MSIArguments -Wait -NoNewWindow
+
+CheckLatestLog
+
+### Veeam ONE Reporter Web UI
+Write-Host "    Installing Veeam ONE Reporter Web UI ..." -ForegroundColor Yellow
+$logfile = "08_ReporterWebUI.txt"
+$MSIArguments = @(
+    "/i"
+    "$source\Monitor\VeeamONE.Reporter.WebUI.x64.msi"
+    "/qn"
+    "/L*v"
+    "$logdir\$logfile"
+    "ACCEPT_THIRDPARTY_LICENSES=1"
+    "ACCEPT_EULA=1"
+    "VM_RP_SERVICEACCOUNT=$username"
+    "VM_RP_SERVICEPASSWORD=$password"
+    "VM_RP_SQL_SERVER=l$env:COMPUTERNAME\$SQLinstance"
+    "VM_RP_SQL_AUTHENTICATION=1"
+    "VM_RP_SQL_USER=sa"
+    "VM_RP_SQL_PASSWORD=$SQLsapassword"
+
+)
+Start-Process "msiexec.exe" -ArgumentList $MSIArguments -Wait -NoNewWindow
+
+CheckLatestLog
+
+### Veeam ONE Monitor Client
+Write-Host "    Installing Veeam ONE Monitor Client ..." -ForegroundColor Yellow
+$logfile = "09_MonitorClient.txt"
+$MSIArguments = @(
+    "/i"
+    "$source\Monitor\VeeamONE.Monitor.Client.x64.msi"
+    "/qn"
+    "/L*v"
+    "$logdir\$logfile"
+    "ACCEPT_THIRDPARTY_LICENSES=1"
+    "ACCEPT_EULA=1"
+
+)
+Start-Process "msiexec.exe" -ArgumentList $MSIArguments -Wait -NoNewWindow
+
+CheckLatestLog
+
+### Veeam ONE Agent
+Write-Host "    Installing Veeam ONE Agent ..." -ForegroundColor Yellow
+$logfile = "10_Agent.txt"
+$MSIArguments = @(
+    "/i"
+    "$source\Monitor\VeeamONE.Agent.x64.msi"
+    "/qn"
+    "/L*v"
+    "$logdir\$logfile"
+    "ACCEPT_THIRDPARTY_LICENSES=1"
+    "ACCEPT_EULA=1"
+    "VO_AGENT_TYPE=1"
+    "VO_BUNDLE_INSTALLATION=1"
+    "VO_AGENT_SERVICE_ACCOUNT_NAME=$username"
+    "VO_AGENT_SERVICE_ACCOUNT_PASSWORD=$password"
+
+)
+Start-Process "msiexec.exe" -ArgumentList $MSIArguments -Wait -NoNewWindow
+
+CheckLatestLog
 
